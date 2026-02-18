@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的本命小动物 | 专属性格大揭秘 🐾</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+        }
+        body {
+            background: linear-gradient(120deg, #FFF8E8, #FDF2F8);
+            padding: 20px;
+            color: #333;
+            overflow-x: hidden;
+        }
+        /* 单条轮播弹幕样式 - 优化版 */
+        .barrage-box {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 45px; /* 刚好容纳单条弹幕，避免遮挡 */
+            line-height: 45px; /* 垂直居中，保证文字完整显示 */
+            overflow: hidden;
+            z-index: 99;
+            pointer-events: none; /* 不影响点击 */
+            background-color: rgba(255, 255, 255, 0.8); /* 浅背景，提升文字可读性 */
+        }
+        .barrage-item {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 18px;
+            color: #FF6B8B;
+            font-weight: bold;
+            top: 0; /* 固定在容器顶部，垂直居中 */
+            left: 100%; /* 初始在右侧外 */
+            animation: move 15s linear forwards; /* 15s滚动完，不循环 */
+        }
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .barrage-item {
+                font-size: 16px;
+            }
+            .barrage-box {
+                height: 40px;
+                line-height: 40px;
+            }
+        }
+        @keyframes move {
+            0% {left: 100%;} /* 起始：右侧屏幕外 */
+            100% {left: -100%;} /* 结束：左侧屏幕外（确保文字完全滚出） */
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(255,182,193,0.15);
+            position: relative;
+            z-index: 10;
+            margin-top: 60px; /* 给弹幕留足够空间 */
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            background: linear-gradient(to right, #FF6B8B, #FF9AA2);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        /* 新增：隐藏标签提示语样式 */
+        .tag-tip {
+            text-align: center;
+            font-size: 14px;
+            color: #8866DD;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .select-box {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        select {
+            padding: 12px 16px;
+            border: 2px solid #B0E0E6;
+            border-radius: 16px;
+            font-size: 16px;
+            min-width: 150px;
+            outline: none;
+        }
+        select:focus {
+            border-color: #FFB6C1;
+        }
+        .btn {
+            background: linear-gradient(to right, #FFB6C1, #FF9AA2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result-box {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 20px;
+            background-color: #FDF2F8;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+        .result-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: 0 4px 8px rgba(255,182,193,0.3);
+            transition: transform 0.3s;
+        }
+        .result-img:hover {
+            transform: rotate(5deg) scale(1.05);
+        }
+        .sticker {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+            z-index: 1;
+        }
+        /* 换贴纸按钮样式 */
+        .change-sticker-btn {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            z-index: 2;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 12px;
+        }
+        .result-info {
+            line-height: 1.8;
+        }
+        .animal-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6B8B;
+            margin-bottom: 10px;
+        }
+        .personality, .hidden-tag, .blessing, .lucky-info {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .hidden-tag {
+            color: #8866DD;
+            font-weight: bold;
+        }
+        .blessing {
+            color: #E63946;
+            font-weight: bold;
+        }
+        .lucky-info {
+            color: #FF8C00;
+            font-weight: bold;
+        }
+        .interact-btn {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .small-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 12px;
+        }
+        /* 性格小问答样式 */
+        .quiz-box {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px dashed #FFB6C1;
+            border-radius: 12px;
+            display: none;
+        }
+        .quiz-title {
+            font-size: 16px;
+            color: #FF6B8B;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .quiz-result {
+            display: none;
+            color: #8866DD;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .footer-note {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #999;
+        }
+        @keyframes float {
+            0% {transform: translateY(0) rotate(0deg); opacity: 0.5;}
+            50% {transform: translateY(-20px) rotate(5deg); opacity: 0.8;}
+            100% {transform: translateY(0) rotate(0deg); opacity: 0.5;}
+        }
+        .float-item {
+            position: fixed;
+            font-size: 20px;
+            opacity: 0.5;
+            animation: float 6s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .result-box {
+                flex-direction: column;
+                text-align: center;
+            }
+            .result-img {
+                width: 80%;
+                height: auto;
+            }
+            .btn {
+                width: 100%;
+            }
+            .select-box {
+                flex-direction: column;
+                align-items: center;
+            }
+            select {
+                width: 100%;
+                max-width: 300px;
+            }
+            .sticker {
+                top: 10px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+            .change-sticker-btn {
+                top: 50px;
+                right: 50%;
+                transform: translateX(50%);
+                width: auto;
+                margin-top: 5px;
+            }
+            .interact-btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 单条轮播弹幕容器 -->
+    <div class="barrage-box" id="barrage-box"></div>
+
+    <div class="container">
+        <h1>🐾 你的本命小动物 | 专属性格大揭秘 🐾</h1>
+        
+        <!-- 新增：隐藏标签提示语 -->
+        <div class="tag-tip">💡 每个小动物都有专属隐藏标签，看看你的是什么～</div>
+        
+        <div class="select-box">
+            <select id="year-select">
+                <option value="">请选择出生年份</option>
+            </select>
+            <select id="month-select">
+                <option value="">请选择出生月份</option>
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+            </select>
+            <button class="btn" onclick="getAnimalResult()">查询我的本命小动物</button>
+        </div>
+
+        <div id="result-box" class="result-box" style="display: none;">
+            <img id="animal-img" class="result-img" src="" alt="本命小动物">
+            <div class="sticker" id="sticker"></div>
+            <!-- 换贴纸按钮 -->
+            <button class="btn small-btn change-sticker-btn" onclick="changeSticker()">换贴纸</button>
+            
+            <div class="result-info">
+                <div class="animal-name" id="animal-name"></div>
+                <div class="personality" id="animal-personality"></div>
+                <div class="hidden-tag" id="animal-hidden-tag"></div>
+                <div class="lucky-info" id="animal-lucky"></div>
+                <div class="blessing" id="animal-blessing"></div>
+                
+                <button class="btn" style="margin-top:10px;" onclick="shareResult()">分享我的本命小动物</button>
+                
+                <div class="interact-btn">
+                    <button class="btn small-btn" onclick="interactReply(true)">超像</button>
+                    <button class="btn small-btn" onclick="interactReply(false)">不太像</button>
+                </div>
+
+                <!-- 测契合度按钮 -->
+                <button class="btn small-btn" style="margin-top:10px;" onclick="showQuiz()">测测契合度✨</button>
+                
+                <!-- 性格小问答区域 -->
+                <div class="quiz-box" id="quiz-box">
+                    <div class="quiz-title">🐾 测测你和本命小动物的契合度 🐾</div>
+                    <div id="quiz-question">Q1：你觉得自己是社牛还是社恐？</div>
+                    <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;" id="quiz-options">
+                        <button class="btn small-btn" onclick="answerQuiz(1)">社牛✨</button>
+                        <button class="btn small-btn" onclick="answerQuiz(2)">社恐🥺</button>
+                    </div>
+                    <div class="quiz-result" id="quiz-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            本查询按简易生肖划分，精准农历匹配可参考日历哦～<br>
+            图片为卡通手绘风格 | 仅供娱乐
+        </div>
+    </div>
+
+    <script>
+        // 核心数据
+        const animalData = [
+    {
+        zodiac: "鼠",
+        name: "高非（仓鼠）",
+        personality: "核心性格：机灵聪慧，适应力强，心思细腻，自带小调皮",
+        hiddenTags: ["社牛天花板", "悄悄努力型", "细节控", "小吃货一枚"],
+        luckyInfo: ["幸运色：奶黄色", "幸运数字：7", "幸运零食：瓜子仁"],
+        blessing: "新年祝福：新岁福气绕，机灵如你，万事都能迎刃而解～",
+        imgUrl: "./images/hamster.png"
+    },
+    {
+        zodiac: "牛",
+        name: "瓦特（水牛）",
+        personality: "核心性格：踏实稳重，有责任心，慢热但重情义",
+        hiddenTags: ["佛系摆烂选手", "靠谱担当", "慢热型选手", "干饭第一名"],
+        luckyInfo: ["幸运色：天蓝色", "幸运数字：8", "幸运零食：青草条"],
+        blessing: "新年祝福：步履不停，稳扎稳打，所求皆如愿，所行皆坦途～",
+        imgUrl: "./images/ox.png"
+    },
+    {
+        zodiac: "虎",
+        name: "泰哥（老虎）",
+        personality: "核心性格：热情果敢，自信大方，有冲劲不怯场",
+        hiddenTags: ["显眼包本包", "行动派", "社牛天花板", "天生主角"],
+        luckyInfo: ["幸运色：橘红色", "幸运数字：9", "幸运零食：小肉干"],
+        blessing: "新年祝福：虎气满满，勇敢奔赴，所有美好都奔你而来～",
+        imgUrl: "./images/tiger.png"
+    },
+    {
+        zodiac: "兔",
+        name: "卡洛特（兔子）",
+        personality: "核心性格：温柔软萌，心思敏感，善良又有同理心",
+        hiddenTags: ["温柔天花板", "社恐小宝贝", "细节控", "治愈系选手"],
+        luckyInfo: ["幸运色：粉色", "幸运数字：2", "幸运零食：胡萝卜干"],
+        blessing: "新年祝福：温柔待世界，世界也予你温柔，兔年万事甜～",
+        imgUrl: "./images/rabbit.png"
+    },
+    {
+        zodiac: "龙",
+        name: "阿宝（小龙）",
+        personality: "核心性格：自带气场，乐观开朗，有主见不随波逐流",
+        hiddenTags: ["显眼包本包", "天生主角", "脑洞大开", "快乐源泉"],
+        luckyInfo: ["幸运色：金黄色", "幸运数字：5", "幸运零食：冰糖葫芦"],
+        blessing: "新年祝福：龙行大运，闪闪发光，活成自己喜欢的样子～",
+        imgUrl: "./images/dragon.png"
+    },
+    {
+        zodiac: "蛇",
+        name: "小青（小青蛇）",
+        personality: "核心性格：冷静理智，观察力强，慢热但内心柔软",
+        hiddenTags: ["高冷范er", "细节控", "慢热型选手", "隐藏大佬"],
+        luckyInfo: ["幸运色：青绿色", "幸运数字：6", "幸运零食：薄荷糖"],
+        blessing: "新年祝福：心有山海，静而无边，新岁事事皆顺意～",
+        imgUrl: "./images/snake.png"
+    },
+    {
+        zodiac: "马",
+        name: "暴莉（小马）",
+        personality: "核心性格：活泼开朗，热爱自由，行动力超强",
+        hiddenTags: ["行动派", "快乐源泉", "社牛天花板", "自由至上"],
+        luckyInfo: ["幸运色：焦糖色", "幸运数字：4", "幸运零食：燕麦棒"],
+        blessing: "新年祝福：奔赴热爱，步履生风，新岁一路向前～",
+        imgUrl: "./images/horse.png"
+    },
+    {
+        zodiac: "羊",
+        name: "咩咩（绵羊）",
+        personality: "核心性格：温柔治愈，善解人意，自带亲和力",
+        hiddenTags: ["温柔天花板", "治愈系选手", "社恐小宝贝", "靠谱担当"],
+        luckyInfo: ["幸运色：奶白色", "幸运数字：3", "幸运零食：羊奶布丁"],
+        blessing: "新年祝福：温暖如初，岁岁安澜，被美好与温柔包围～",
+        imgUrl: "./images/sheep.png"
+    },
+    {
+        zodiac: "猴",
+        name: "皮皮（猕猴）",
+        personality: "核心性格：古灵精怪，脑洞大开，永远充满好奇心",
+        hiddenTags: ["脑洞大开", "显眼包本包", "快乐源泉", "整活小能手"],
+        luckyInfo: ["幸运色：果绿色", "幸运数字：1", "幸运零食：香蕉干"],
+        blessing: "新年祝福：趣味满满，脑洞开挂，每天都有新惊喜～",
+        imgUrl: "./images/monkey.png"
+    },
+    {
+        zodiac: "鸡",
+        name: "咕咕（小鸡）",
+        personality: "核心性格：细心谨慎，有原则，自带小傲娇",
+        hiddenTags: ["细节控", "高冷范er", "靠谱担当", "傲娇小宝贝"],
+        luckyInfo: ["幸运色：嫩黄色", "幸运数字：10", "幸运零食：小米饼"],
+        blessing: "新年祝福：事事周全，步步稳妥，新岁皆有好消息～",
+        imgUrl: "./images/chicken.png"
+    },
+    {
+        zodiac: "狗",
+        name: "尼莫（柴犬）",
+        personality: "核心性格：忠诚仗义，热情直爽，永远真诚待人",
+        hiddenTags: ["社牛天花板", "靠谱担当", "快乐源泉", "小吃货一枚"],
+        luckyInfo: ["幸运色：赤茶色", "幸运数字：11", "幸运零食：牛肉粒"],
+        blessing: "新年祝福：好运旺财，挚友常伴，新岁温暖又热闹～",
+        imgUrl: "./images/dog.png"
+    },
+    {
+        zodiac: "猪",
+        name: "培根（小猪）",
+        personality: "核心性格：佛系乐观，心宽体胖，自带治愈感",
+        hiddenTags: ["佛系摆烂选手", "治愈系选手", "小吃货一枚", "快乐源泉"],
+        luckyInfo: ["幸运色：樱花粉", "幸运数字：12", "幸运零食：紫薯饼"],
+        blessing: "新年祝福：吃好喝好，快乐不倒，新岁福气胖嘟嘟～",
+        imgUrl: "./images/pig.png"
+    }
+];
+        // 全局变量：问答相关 + 弹幕相关
+        let quizScore = 0;
+        let quizStep = 1;
+        const barrageTexts = [
+            "今日份可爱已加载✨", 
+            "本命小动物超甜🥳", 
+            "幸运值拉满🍬", 
+            "被小动物治愈啦💖",
+            "显眼包已上线😜",
+            "干饭魂觉醒🍚",
+            "快乐星球原住民🌍",
+            "佛系但可爱😘"
+        ];
+        let currentBarrageIndex = 0; // 当前播放的弹幕索引
+
+        window.onload = function() {
+            // 生成年份选项
+            const yearSelect = document.getElementById("year-select");
+            for(let year = 1999; year <= 2024; year++){
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year + "年";
+                yearSelect.appendChild(option);
+            }
+
+            // 生成漂浮元素
+            const floatItems = ["❤️", "✨", "🐾", "🍬", "🥳", "💖", "🌟"];
+            for(let i=0; i<5; i++){
+                const item = document.createElement("div");
+                item.className = "float-item";
+                item.textContent = floatItems[Math.floor(Math.random()*floatItems.length)];
+                item.style.left = Math.random()*100 + "%";
+                item.style.top = Math.random()*100 + "%";
+                item.style.animationDelay = Math.random()*3 + "s";
+                document.body.appendChild(item);
+            }
+
+            // 启动单条轮播弹幕
+            startBarrageLoop();
+        };
+
+        // 单条弹幕轮播核心函数
+        function startBarrageLoop() {
+            const barrageBox = document.getElementById("barrage-box");
+            // 清空原有弹幕
+            barrageBox.innerHTML = "";
+            
+            // 创建当前弹幕元素
+            const barrageItem = document.createElement("div");
+            barrageItem.className = "barrage-item";
+            barrageItem.textContent = barrageTexts[currentBarrageIndex];
+            barrageBox.appendChild(barrageItem);
+
+            // 切换到下一条弹幕（循环）
+            currentBarrageIndex = (currentBarrageIndex + 1) % barrageTexts.length;
+
+            // 弹幕播放完（15s）后，自动播放下一条
+            setTimeout(startBarrageLoop, 15000); // 15000ms = 15s，和动画时长一致
+        }
+
+        // 生肖匹配逻辑
+        function getZodiac(year) {
+            const zodiacs = ["鼠","牛","虎","兔","龙","蛇","马","羊","猴","鸡","狗","猪"];
+            const baseYear = 1984;
+            let index = (year - baseYear) % 12;
+            if (index < 0) index += 12;
+            return zodiacs[index];
+        }
+
+        // 判断春节
+        function isSpringFestival() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            return (month === 1 && day >=20) || (month === 2 && day <=20);
+        }
+
+        // 查询结果核心函数
+        function getAnimalResult() {
+            const btn = document.querySelector(".btn");
+            const year = parseInt(document.getElementById("year-select").value);
+            const month = document.getElementById("month-select").value;
+            
+            // 潮梗提示语
+            if (!year || !month) {
+                alert("宝子！快选出生年月，解锁你的专属小动物～🥺");
+                return;
+            }
+            if (year < 1999 || year > 2024) {
+                alert("这个年份的宝还没上线哦～选1999-2024年康康😝");
+                return;
+            }
+
+            btn.textContent = "正在匹配本命小动物🐾";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const zodiac = getZodiac(year);
+                const animal = animalData.find(item => item.zodiac === zodiac);
+                
+                // 随机贴纸
+                const stickers = ["✨", "🍬", "🐾", "❤️", "🥳", "💖", "🌟", "🍓"];
+                const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
+                document.getElementById("sticker").textContent = randomSticker;
+
+                // 显示核心信息
+                document.getElementById("animal-img").src = animal.imgUrl;
+                document.getElementById("animal-name").textContent = animal.name;
+                document.getElementById("animal-personality").textContent = animal.personality;
+                
+                // 随机隐藏标签
+                const randomTag = animal.hiddenTags[Math.floor(Math.random() * animal.hiddenTags.length)];
+                document.getElementById("animal-hidden-tag").textContent = `隐藏标签：${randomTag}`;
+
+                // 随机幸运信息
+                const randomLucky = animal.luckyInfo[Math.floor(Math.random() * animal.luckyInfo.length)];
+                document.getElementById("animal-lucky").textContent = `专属幸运：${randomLucky}`;
+
+                // 春节祝福
+                const blessingDom = document.getElementById("animal-blessing");
+                if (isSpringFestival()) {
+                    blessingDom.textContent = animal.blessing;
+                    blessingDom.style.display = "block";
+                } else {
+                    blessingDom.style.display = "none";
+                }
+
+                // 重置问答状态
+                quizScore = 0;
+                quizStep = 1;
+                document.getElementById("quiz-result").style.display = "none";
+                document.getElementById("quiz-box").style.display = "none";
+                // 重置问答选项
+                resetQuizOptions();
+
+                document.getElementById("result-box").style.display = "flex";
+                btn.textContent = "查询我的本命小动物";
+                btn.disabled = false;
+            }, 500);
+        }
+
+        // 换贴纸功能
+        function changeSticker() {
+            const stickers = ["✨", "🍬", "🐾", "❤️", "🥳", "💖", "🌟", "🍓", "🍉", "🥰"];
+            const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
+            document.getElementById("sticker").textContent = randomSticker;
+            // 潮梗提示
+            alert(`贴纸已换新✨！这个${randomSticker}超配你～`);
+        }
+
+        // 重置问答选项（新增）
+        function resetQuizOptions() {
+            const optionsDom = document.getElementById("quiz-options");
+            optionsDom.innerHTML = `
+                <button class="btn small-btn" onclick="answerQuiz(1)">社牛✨</button>
+                <button class="btn small-btn" onclick="answerQuiz(2)">社恐🥺</button>
+            `;
+            document.getElementById("quiz-question").style.display = "block";
+        }
+
+        // 显示性格小问答
+        function showQuiz() {
+            document.getElementById("quiz-box").style.display = "block";
+            // 重置问答问题和选项
+            document.getElementById("quiz-question").textContent = "Q1：你觉得自己是社牛还是社恐？";
+            document.getElementById("quiz-result").style.display = "none";
+            resetQuizOptions();
+        }
+
+        // 回答问答（修复选项bug）
+        function answerQuiz(score) {
+            quizScore += score;
+            quizStep++;
+            const questionDom = document.getElementById("quiz-question");
+            const optionsDom = document.getElementById("quiz-options");
+            
+            // 切换问题和对应选项（潮梗版）
+            if (quizStep === 2) {
+                questionDom.textContent = "Q2：你做事更偏向果断还是谨慎？";
+                optionsDom.innerHTML = `
+                    <button class="btn small-btn" onclick="answerQuiz(1)">果断⚡</button>
+                    <button class="btn small-btn" onclick="answerQuiz(2)">谨慎🤔</button>
+                `;
+            } else if (quizStep === 3) {
+                questionDom.textContent = "Q3：干饭是你的人生大事吗？";
+                optionsDom.innerHTML = `
+                    <button class="btn small-btn" onclick="answerQuiz(1)">必须是🍚</button>
+                    <button class="btn small-btn" onclick="answerQuiz(2)">一般般😐</button>
+                `;
+            } else {
+                // 计算契合度结果
+                const totalScore = quizScore;
+                let matchText = "";
+                if (totalScore >= 5) {
+                    matchText = `契合度100%💘！你和本命小动物简直是天选搭子～`;
+                } else if (totalScore >= 3) {
+                    matchText = `契合度80%✨！你和本命小动物有小差异，但依旧超配～`;
+                } else {
+                    matchText = `契合度60%🥺！多了解下你的小动物，会发现超合拍～`;
+                }
+                // 隐藏问题，显示结果
+                questionDom.style.display = "none";
+                optionsDom.style.display = "none";
+                document.getElementById("quiz-result").textContent = matchText;
+                document.getElementById("quiz-result").style.display = "block";
+            }
+        }
+
+        // 分享功能
+        function shareResult() {
+            const name = document.getElementById("animal-name").textContent;
+            const personality = document.getElementById("animal-personality").textContent;
+            const hiddenTag = document.getElementById("animal-hidden-tag").textContent;
+            const luckyInfo = document.getElementById("animal-lucky").textContent;
+            const shareText = `我的本命小动物是${name}！${personality} ${hiddenTag} ${luckyInfo} #本命小动物 #趣味测试 🐾`;
+            
+            navigator.clipboard.writeText(shareText).then(() => {
+                alert("分享文案已复制到剪贴板～快去发朋友圈/小红书炫一波😜");
+            }).catch(() => {
+                alert("宝子，复制失败啦！手动复制下面的文案吧～\n" + shareText);
+            });
+        }
+
+        // 互动回复
+        function interactReply(isLike) {
+            if (isLike) {
+                const replies = ["果然是本命！精准命中💘", "太贴了吧～这就是你本人没错了😝", "锁死！这就是你的专属小动物✨"];
+                alert(replies[Math.floor(Math.random() * replies.length)]);
+            } else {
+                const replies = ["可能是小动物藏了小秘密～😜", "换个年份康康？说不定有惊喜✨", "没关系～可爱就完事了🥳"];
+                alert(replies[Math.floor(Math.random() * replies.length)]);
+            }
+        }
+    </script>
+</body>
+</html>
